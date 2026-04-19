@@ -10,35 +10,36 @@ all the credentials handy.
 - The machine should be on a network with outbound internet. No inbound ports
   are required — Tailscale handles remote access.
 
-## 1. Install Docker + Compose plugin
-
-```bash
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl gnupg git
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-  | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-  https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
-  | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
-sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-sudo usermod -aG docker "$USER"
-# log out and back in (or `newgrp docker`) so your user picks up group membership
-```
-
-Verify: `docker run --rm hello-world`.
-
-## 2. Clone this repo
+## 1. Clone this repo and run the provisioning script
 
 ```bash
 git clone https://github.com/<your-fork>/openclaw-config.git
 cd openclaw-config
-cp .env.example .env
+sudo ./scripts/provision.sh
 ```
 
-Now open `.env` in an editor — every variable is documented inline. You'll
-collect the credentials in the next steps.
+The script is idempotent and installs:
+
+- Docker engine + compose plugin
+- Adds your user to the `docker` group
+- Enables a default-deny `ufw` firewall (Tailscale handles overlay access)
+- Turns on unattended security upgrades
+- `git`, `jq`, `curl`, `gnupg`
+
+If your user was just added to the `docker` group, log out and back in (or
+`newgrp docker`) before continuing.
+
+Verify: `docker run --rm hello-world`.
+
+## 2. Create your .env
+
+```bash
+cp .env.example .env
+$EDITOR .env
+```
+
+Every variable is documented inline. Steps 3–8 below tell you where to get
+each value.
 
 ## 3. Tailscale auth key
 

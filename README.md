@@ -33,8 +33,10 @@ This repo is a **generic template** — fork it, fill in `.env`, and run.
 │   ├── Dockerfile              # python:3.12-slim + uv
 │   ├── pyproject.toml
 │   └── server.py               # FastMCP server with the social-drafting tools
+├── scripts/
+│   └── provision.sh            # one-shot setup for a fresh Ubuntu 24.04 box
 └── docs/
-    └── SETUP.md                # fresh-Ubuntu install walkthrough
+    └── SETUP.md                # full install walkthrough
 ```
 
 ## Architecture
@@ -70,14 +72,22 @@ by OpenClaw at `http://localhost:8000` inside that shared namespace.
 
 ## Quick start
 
-1. `cp .env.example .env` and fill in the values.
-2. `docker compose up -d`
-3. Open `http://<tailscale-hostname>:18789` to verify the Gateway is up.
-4. DM your Discord bot to pair it (OpenClaw replies with a code, paste it back).
-5. DM the bot a `.md` file attachment. It will reply with drafts for each
-   channel, and ask before opening the blog PR.
+On a fresh Ubuntu 24.04 box:
 
-Detailed walkthrough: [docs/SETUP.md](docs/SETUP.md).
+```bash
+git clone https://github.com/<your-fork>/openclaw-config.git
+cd openclaw-config
+sudo ./scripts/provision.sh        # docker, ufw, unattended-upgrades
+cp .env.example .env && $EDITOR .env
+docker compose up -d --build
+```
+
+Then open `http://<tailscale-hostname>:18789` to verify the Gateway, and DM
+your Discord bot a markdown file. It replies with drafts for each channel
+and asks before opening the blog PR.
+
+Full walkthrough (Tailscale key, Discord bot, RunPod endpoint, GitHub PAT):
+[docs/SETUP.md](docs/SETUP.md).
 
 ## Hardware
 
