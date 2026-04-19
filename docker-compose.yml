@@ -1,0 +1,68 @@
+# openclaw-config — three services sharing the tailscale netns:
+#   - tailscale: brings the host onto your tailnet
+#   - openclaw:  the gateway (Discord ↔ agent)
+#   - mcp:       Python tools the agent calls (drafts, voiceover, blog PR)
+#
+# Sharing one netns means the OpenClaw UI is reachable on the tailnet at
+# http://<TS_HOSTNAME>:18789 and openclaw can reach the MCP server at
+# http://localhost:8000 — nothing is exposed on the host's public interface.
+
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale
+    hostname: ${TS_HOSTNAME:-openclaw}
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"
+      TS_EXTRA_ARGS: --ssh
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+      - sys_module
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "tailscale", "status", "--peers=false"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  openclaw:
+    image: ghcr.io/openclaw/openclaw:latest
+    container_name: openclaw
+    depends_on:
+      tailscale:
+        condition: service_healthy
+      mcp:
+        condition: service_started
+    network_mode: service:tailscale
+    env_file: .env
+    volumes:
+      - openclaw-config:/home/node/.openclaw
+      - ./openclaw/openclaw.json5:/home/node/.openclaw/openclaw.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:18789/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  mcp:
+    build: ./mcp
+    container_name: openclaw-mcp
+    depends_on:
+      tailscale:
+        condition: service_healthy
+    network_mode: service:tailscale
+    env_file: .env
+    volumes:
+      # Voiceover renders land here so you can grab them off the host.
+      - ./data:/app/data
+    restart: unless-stopped
+
+volumes:
+  tailscale-state:
+  openclaw-config:

@@ -1,0 +1,23 @@
+.env
+.env.*
+!.env.example
+
+# python / uv
+__pycache__/
+*.pyc
+.venv/
+mcp/.venv/
+
+# editor
+.vscode/
+.idea/
+*.swp
+
+# os
+.DS_Store
+Thumbs.db
+
+# local state that shouldn't ever be committed
+state/
+data/
+*.log

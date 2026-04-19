@@ -1,0 +1,40 @@
+// OpenClaw Gateway config.
+// Mounted into the openclaw container at /home/node/.openclaw/openclaw.json.
+// Strings of the form "${VAR}" are resolved from container env (set via .env).
+{
+  channels: {
+    discord: {
+      enabled: true,
+      botToken: "${DISCORD_BOT_TOKEN}",
+      // Only the configured Discord user can DM the bot.
+      dmPolicy: "allowlist",
+      allowlist: ["${DISCORD_OWNER_ID}"],
+    },
+  },
+
+  models: {
+    providers: {
+      runpod: {
+        baseUrl: "${RUNPOD_BASE_URL}",
+        apiKey: "${RUNPOD_API_KEY}",
+        api: "openai-completions",
+      },
+    },
+  },
+
+  agents: {
+    defaults: {
+      model: { primary: "runpod/${RUNPOD_MODEL}" },
+      systemPrompt: "You are a social-media orchestration agent for a technical blog. The owner DMs you a markdown blog post (often as a file attachment). Your job: call the appropriate MCP tools on the `social-tools` server to draft posts for X, LinkedIn, Medium, Reddit, and a short-form video script. Always return drafts inline in the chat for human review — do not auto-publish. Before opening a blog PR via the `publish_blog_pr` tool, confirm with the owner. Match the brand voice configured on the tools. Be concise in your own replies — the value is in the drafts, not commentary.",
+    },
+  },
+
+  mcp: {
+    servers: {
+      "social-tools": {
+        url: "http://localhost:8000/mcp",
+        transport: "streamable-http",
+      },
+    },
+  },
+}
